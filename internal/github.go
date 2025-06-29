@@ -102,5 +102,18 @@ func (s *GitHubService) Client() *github.Client {
 //    - A squash merge will always result in exactly one new commit, so the parent of the merge commit will be the base commit.
 //    - A rebase and merge will result in N new commits, where N is the number of commits in the PR.
 func (s *GitHubService) IsSquashMerge(pr *github.PullRequest) (bool, error) {
-	return false, nil
+	if pr.MergeCommitSHA == nil {
+		return false, fmt.Errorf("pull request has not been merged")
+	}
+
+	mergeCommit, _, err := s.client.Git.GetCommit(context.Background(), s.owner, s.repo, pr.GetMergeCommitSHA())
+	if err != nil {
+		return false, err
+	}
+
+	if len(mergeCommit.Parents) != 1 {
+		return false, nil
+	}
+
+	return *mergeCommit.Parents[0].SHA == *pr.Base.SHA, nil
 }
