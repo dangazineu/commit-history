@@ -1,0 +1,13 @@
+"commit_hash","author_name","author_email","commit_date","subject","body","unidiff"
+"abc","John Doe","john.doe@example.com","2025-06-29T20:00:00Z","feat: new feature","This is a new feature.","diff --git a/file.txt b/file.txt
+--- a/file.txt
++++ b/file.txt
+@@ -1 +1 @@
+-hello
++hello world"
+"def","Jane Doe","jane.doe@example.com","2025-06-29T20:01:00Z","fix: a bug","This fixes a bug.","diff --git a/file.txt b/file.txt
+--- a/file.txt
++++ b/file.txt
+@@ -1 +1 @@
+-hello world
++hello"
