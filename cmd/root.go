@@ -8,9 +8,10 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "commit-history",
-	Short: "A CLI tool to analyze commit history.",
-	Long:  `A CLI tool to analyze commit history and generate reports.`,
+	Use:          "commit-history",
+	Short:        "A CLI tool to analyze commit history.",
+	Long:         `A CLI tool to analyze commit history and generate reports.`,
+	SilenceUsage: true,
 }
 
 func Execute() {

@@ -48,7 +48,7 @@ func (w *CSVWriter) Write(pr *github.PullRequest, isSquash bool, title, body, so
 	record := []string{
 		strconv.Itoa(*pr.Number),
 		*pr.Head.SHA,
-		*pr.MergeCommitSHA,
+		"",
 		*pr.Title,
 		*pr.Body,
 		strconv.FormatBool(isSquash),
@@ -57,6 +57,9 @@ func (w *CSVWriter) Write(pr *github.PullRequest, isSquash bool, title, body, so
 		sourceLink,
 		resolvedSourceLink,
 		unidiff,
+	}
+	if pr.MergeCommitSHA != nil {
+		record[2] = *pr.MergeCommitSHA
 	}
 	return w.writer.Write(record)
 }

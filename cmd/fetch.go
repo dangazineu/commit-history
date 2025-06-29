@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/danielgazineu/commit-history/internal"
@@ -33,8 +31,10 @@ var fetchCmd = &cobra.Command{
 }
 
 func runFetch(repo, query, googleapisRepoPath string) error {
+	log.Println("Running fetch command")
 	fmt.Printf("Fetching pull requests for repository: %s\n", repo)
 	fmt.Printf("Query: %s\n", query)
+
 
 	githubService, err := internal.NewGitHubService(repo)
 	if err != nil {
@@ -49,37 +49,6 @@ func runFetch(repo, query, googleapisRepoPath string) error {
 	fmt.Printf("Found %d merged pull requests.\n", len(prs))
 
 	outputFileName := fmt.Sprintf("%s-fetched.csv", strings.Split(repo, "/")[1])
-	processedPRs := make(map[int]bool)
-	if _, err := os.Stat(outputFileName); err == nil {
-		fmt.Println("Output file already exists, resuming from last run.")
-		file, err := os.Open(outputFileName)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		reader := csv.NewReader(file)
-		// Skip header
-		if _, err := reader.Read(); err != nil {
-			return err
-		}
-
-		for {
-			record, err := reader.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return err
-			}
-			prNumber, err := strconv.Atoi(record[0])
-			if err != nil {
-				return err
-			}
-			processedPRs[prNumber] = true
-		}
-	}
-
 	csvWriter, err := internal.NewCSVWriter(outputFileName)
 	if err != nil {
 		return err
@@ -88,30 +57,24 @@ func runFetch(repo, query, googleapisRepoPath string) error {
 
 	re := regexp.MustCompile(`Source-Link: (?:https://github.com/)?googleapis/googleapis(?:/commit/|@)([a-f0-9]{7,40})`)
 
-	gitService, err := internal.NewGitService(googleapisRepoPath)
+	repoPath := filepath.Join(googleapisRepoPath, "googleapis")
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		fmt.Println("Creating a local copy of googleapis/googleapis...")
+		gitService := &internal.GitService{}
+		if err := gitService.Clone("https://github.com/googleapis/googleapis.git", repoPath); err != nil {
+			return err
+		}
+		fmt.Println("Done creating copy.")
+	} else {
+		fmt.Println("Using existing local copy of googleapis/googleapis.")
+	}
+
+	gitService, err := internal.NewGitService(repoPath)
 	if err != nil {
 		return err
 	}
-
-	tempGoogleapisDir, err := os.MkdirTemp("", "googleapis-copy")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tempGoogleapisDir)
-
-	fmt.Println("Creating a temporary local copy of googleapis/googleapis...")
-	if err := gitService.LocalClone(tempGoogleapisDir); err != nil {
-		return err
-	}
-	fmt.Println("Done creating copy.")
-	gitService.SetRepoDir(tempGoogleapisDir)
 
 	for _, pr := range prs {
-		if processedPRs[*pr.Number] {
-			fmt.Printf("Skipping already processed PR #%d\n", *pr.Number)
-			continue
-		}
-
 		if err := processPullRequest(pr, githubService, csvWriter, re, gitService); err != nil {
 			log.Printf("Error processing PR #%d: %v", *pr.Number, err)
 		}
