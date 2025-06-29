@@ -20,7 +20,7 @@ func TestGenerateCommitMessage(t *testing.T) {
 	execCommand = mockExecCommand
 	defer func() { execCommand = exec.Command }()
 
-	s := &GeminiService{geminiPath: "gemini"}
+	s := &geminiServiceImpl{geminiPath: "gemini"}
 	title, body, err := s.GenerateCommitMessage("/tmp", "test title", "test body", "test diff")
 	if err != nil {
 		t.Fatalf("GenerateCommitMessage failed: %v", err)
@@ -38,7 +38,7 @@ func TestAnalyzeCommitMessages(t *testing.T) {
 	execCommand = mockExecCommand
 	defer func() { execCommand = exec.Command }()
 
-	s := &GeminiService{geminiPath: "gemini"}
+	s := &geminiServiceImpl{geminiPath: "gemini"}
 	analysis, err := s.AnalyzeCommitMessages("/tmp", "original title", "original body", "gemini title", "gemini body")
 	if err != nil {
 		t.Fatalf("AnalyzeCommitMessages failed: %v", err)
