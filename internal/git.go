@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 type GitService struct {
@@ -11,7 +12,7 @@ type GitService struct {
 }
 
 func NewGitService(repoDir string) (*GitService, error) {
-	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(repoDir, ".git")); os.IsNotExist(err) {
 		return nil, fmt.Errorf("repository path not found: %s", repoDir)
 	}
 	return &GitService{
@@ -20,7 +21,7 @@ func NewGitService(repoDir string) (*GitService, error) {
 }
 
 func (s *GitService) Clone(url, dir string) error {
-	cmd := exec.Command("git", "clone", "--depth=1000", url, dir)
+	cmd := exec.Command("git", "clone", url, dir)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error cloning repository: %w\nOutput: %s", err, string(output))
