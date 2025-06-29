@@ -6,21 +6,26 @@ import (
 	"strings"
 )
 
-type GeminiService struct {
+type GeminiService interface {
+	GenerateCommitMessage(tempDir, prTitle, prBody, unidiff string) (string, string, error)
+	AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody string) (string, error)
+}
+
+type geminiServiceImpl struct {
 	geminiPath string
 }
 
-func NewGeminiService() (*GeminiService, error) {
+func NewGeminiService() (GeminiService, error) {
 	path, err := exec.LookPath("gemini")
 	if err != nil {
 		return nil, fmt.Errorf("gemini executable not found in PATH")
 	}
-	return &GeminiService{geminiPath: path}, nil
+	return &geminiServiceImpl{geminiPath: path}, nil
 }
 
 var execCommand = exec.Command
 
-func (s *GeminiService) GenerateCommitMessage(tempDir, prTitle, prBody, unidiff string) (string, string, error) {
+func (s *geminiServiceImpl) GenerateCommitMessage(tempDir, prTitle, prBody, unidiff string) (string, string, error) {
 	prompt := fmt.Sprintf(`
 Given the following pull request information and a unidiff of the changes from the source repository, please generate a conventional commit message.
 The commit message should describe how the changes in the source repository affect the client library.
@@ -47,7 +52,7 @@ Unidiff:
 	return strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1]), nil
 }
 
-func (s *GeminiService) AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody string) (string, error) {
+func (s *geminiServiceImpl) AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody string) (string, error) {
 	prompt := fmt.Sprintf(`
 Given the following two commit messages, which one is more comprehensive and accurately describes the changes to the library?
 

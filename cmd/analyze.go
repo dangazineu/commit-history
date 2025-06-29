@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -28,73 +27,82 @@ var analyzeCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		file, err := os.Open(inputCsvAnalyze)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer file.Close()
-
-		reader := csv.NewReader(file)
-		// Read header
-		header, err := reader.Read()
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		outputFileName := strings.Replace(inputCsvAnalyze, "-augmented.csv", "-analyzed.csv", 1)
-		csvWriter, err := internal.NewAnalyzedCSVWriter(outputFileName)
-		if err != nil {
+		if err := runAnalyze(geminiService, inputCsvAnalyze, outputFileName); err != nil {
 			log.Fatal(err)
-		}
-		defer csvWriter.Close()
-
-				if err := csvWriter.WriteAnalyzed(header, "gemini_analysis"); err != nil {
-			log.Fatal(err)
-		}
-
-		for {
-			record, err := reader.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if len(record) > 13 && record[13] != "" {
-				fmt.Printf("Skipping already analyzed record for PR #%s\n", record[0])
-				if err := csvWriter.WriteAnalyzed(record, record[13]); err != nil {
-					log.Printf("Error writing to CSV: %v", err)
-				}
-				continue
-			}
-
-			originalTitle := record[6]
-			originalBody := record[7]
-			geminiTitle := record[11]
-			geminiBody := record[12]
-
-			tempDir, err := os.MkdirTemp("", "gemini")
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer os.RemoveAll(tempDir)
-
-			analysis, err := geminiService.AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody)
-			if err != nil {
-				log.Printf("Error analyzing commit messages: %v", err)
-				if err := csvWriter.WriteAnalyzed(record, "error"); err != nil {
-					log.Printf("Error writing to CSV: %v", err)
-				}
-				continue
-			}
-
-			if err := csvWriter.WriteAnalyzed(record, analysis); err != nil {
-				log.Printf("Error writing to CSV: %v", err)
-			}
 		}
 	},
 }
+
+func runAnalyze(geminiService internal.GeminiService, inputPath, outputPath string) error {
+	file, err := os.Open(inputPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	// Read header
+	header, err := reader.Read()
+	if err != nil {
+		return err
+	}
+
+	csvWriter, err := internal.NewAnalyzedCSVWriter(outputPath)
+	if err != nil {
+		return err
+	}
+	defer csvWriter.Close()
+
+	if err := csvWriter.WriteAnalyzed(header, "gemini_analysis"); err != nil {
+		return err
+	}
+
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return err
+		}
+
+		if len(record) > 13 && record[13] != "" {
+			fmt.Printf("Skipping already analyzed record for PR #%s\n", record[0])
+			if err := csvWriter.WriteAnalyzed(record, record[13]); err != nil {
+				log.Printf("Error writing to CSV: %v", err)
+			}
+			continue
+		}
+
+		originalTitle := record[6]
+		originalBody := record[7]
+		geminiTitle := record[11]
+		geminiBody := record[12]
+
+		tempDir, err := os.MkdirTemp("", "gemini")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(tempDir)
+
+		analysis, err := geminiService.AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody)
+		if err != nil {
+			log.Printf("Error analyzing commit messages: %v", err)
+			if err := csvWriter.WriteAnalyzed(record, "error"); err != nil {
+				log.Printf("Error writing to CSV: %v", err)
+			}
+			continue
+		}
+
+		if err := csvWriter.WriteAnalyzed(record, analysis); err != nil {
+			log.Printf("Error writing to CSV: %v", err)
+		}
+		log.Printf("Wrote record: %v", record)
+	}
+	return nil
+}
+
 
 func init() {
 	rootCmd.AddCommand(analyzeCmd)
