@@ -26,7 +26,7 @@ func TestAugmentCmd(t *testing.T) {
 
 	writer := csv.NewWriter(file)
 
-	
+	writer.Write([]string{"pr_number", "before_merge_commit_hash", "after_merge_commit_hash", "pr_title", "pr_body", "is_squash_merge", "merge_commit_title", "merge_commit_body", "source_link", "resolved_source_link", "source_link_unidiff"})
 	writer.Write([]string{"1", "abc", "def", "feat: new feature", "This is a new feature.", "true", "feat: new feature", "This is a new feature.", "http://example.com/1", "http://example.com/1", `diff --git a/file.txt b/file.txt
 --- a/file.txt
 +++ b/file.txt
@@ -81,7 +81,7 @@ func TestAugmentCmd(t *testing.T) {
 +++ b/file.txt
 @@ -1 +1 @@
 -hello
-+hello world`, "gemini_proposed_title", "gemini_proposed_body"}
++hello world`, "feat: new feature", "This is a new feature."}
 	if !reflect.DeepEqual(records[1], expected) {
 		t.Errorf("Expected record %#v, got %#v", expected, records[1])
 	}
