@@ -18,6 +18,8 @@ func NewGeminiService() (*GeminiService, error) {
 	return &GeminiService{geminiPath: path}, nil
 }
 
+var execCommand = exec.Command
+
 func (s *GeminiService) GenerateCommitMessage(tempDir, prTitle, prBody, unidiff string) (string, string, error) {
 	prompt := fmt.Sprintf(`
 Given the following pull request information and a unidiff of the changes from the source repository, please generate a conventional commit message.
@@ -30,7 +32,7 @@ Unidiff:
 %s
 `, prTitle, prBody, unidiff)
 
-	cmd := exec.Command(s.geminiPath, "propose-commit", "--prompt", prompt)
+	cmd := execCommand(s.geminiPath, "propose-commit", "--prompt", prompt)
 	cmd.Dir = tempDir
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -42,7 +44,7 @@ Unidiff:
 		return "", "", fmt.Errorf("unexpected output from gemini: %s", string(output))
 	}
 
-	return parts[0], parts[1], nil
+	return strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1]), nil
 }
 
 func (s *GeminiService) AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody string) (string, error) {
@@ -58,12 +60,12 @@ Title: %s
 Body: %s
 `, originalTitle, originalBody, geminiTitle, geminiBody)
 
-	cmd := exec.Command(s.geminiPath, "analyze-commit", "--prompt", prompt)
+	cmd := execCommand(s.geminiPath, "analyze-commit", "--prompt", prompt)
 	cmd.Dir = tempDir
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("error executing gemini command: %w\nOutput: %s", err, string(output))
 	}
 
-	return string(output), nil
+	return strings.TrimSpace(string(output)), nil
 }
