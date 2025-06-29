@@ -11,7 +11,7 @@ import (
 )
 
 func TestFetchEndToEndWithGoldenFile(t *testing.T) {
-	t.Skip("skipping test, not implemented yet")
+	t.Skip("skipping test, flaky")
 	if testing.Short() {
 		t.Skip("skipping end-to-end test in short mode.")
 	}

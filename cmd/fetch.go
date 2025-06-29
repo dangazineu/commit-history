@@ -35,7 +35,6 @@ func runFetch(repo, query, googleapisRepoPath string) error {
 	fmt.Printf("Fetching pull requests for repository: %s\n", repo)
 	fmt.Printf("Query: %s\n", query)
 
-
 	githubService, err := internal.NewGitHubService(repo)
 	if err != nil {
 		return err
@@ -84,7 +83,7 @@ func runFetch(repo, query, googleapisRepoPath string) error {
 	return nil
 }
 
-func processPullRequest(pr *github.PullRequest, githubService *internal.GitHubService, csvWriter *internal.CSVWriter, re *regexp.Regexp, gitService *internal.GitService) error {
+func processPullRequest(pr *github.PullRequest, githubService internal.GitHubServiceInterface, csvWriter *internal.CSVWriter, re *regexp.Regexp, gitService internal.GitServiceInterface) error {
 	isSquash, err := githubService.IsSquashMerge(pr)
 	if err != nil {
 		return fmt.Errorf("error checking if PR was squash merged: %w", err)
