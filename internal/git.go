@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 )
 
+var _ GitServiceInterface = &GitService{}
+
 type GitService struct {
 	repoDir string
 }

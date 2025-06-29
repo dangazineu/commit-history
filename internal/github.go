@@ -11,6 +11,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var _ GitHubServiceInterface = &GitHubService{}
+
 type GitHubService struct {
 	client *github.Client
 	owner  string
