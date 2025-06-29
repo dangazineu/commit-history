@@ -25,9 +25,13 @@ func TestAnalyzeCmd(t *testing.T) {
 	}
 
 	writer := csv.NewWriter(file)
-
-	
-	writer.Write([]string{"abc", "John Doe", "john.doe@example.com", "2025-06-29T20:00:00Z", "feat: new feature", "This is a new feature.", "diff --git a/file.txt b/file.txt\n--- a/file.txt\n+++ b/file.txt\n@@ -1 +1 @@\n-hello\n+hello world", "feat: new feature", "This is a new feature.", "1", "http://example.com/1", "feat: new feature", "This is a new feature."})
+	writer.Write([]string{"commit_hash", "author_name", "author_email", "commit_date", "subject", "body", "unidiff", "gemini_subject", "gemini_body", "pr_number", "pr_url", "pr_title", "pr_body"})
+	writer.Write([]string{"abc", "John Doe", "john.doe@example.com", "2025-06-29T20:00:00Z", "feat: new feature", "This is a new feature.", `diff --git a/file.txt b/file.txt
+--- a/file.txt
++++ b/file.txt
+@@ -1 +1 @@
+-hello
++hello world`, "feat: new feature", "This is a new feature.", "1", "http://example.com/1", "feat: new feature", "This is a new feature."})
 	writer.Flush()
 	file.Close()
 
@@ -39,21 +43,21 @@ func TestAnalyzeCmd(t *testing.T) {
 	t.Logf("Input CSV content:\n%s", string(inputData))
 
 	// Run the analyze command
-	outputPath := filepath.Join(tmpDir, "output.csv")
+	outPath := filepath.Join(tmpDir, "output.csv")
 	geminiService := &mockGeminiService{}
-	if err := runAnalyze(geminiService, inputPath, outputPath); err != nil {
+	if err := runAnalyze(geminiService, inputPath, outPath); err != nil {
 		t.Fatal(err)
 	}
 
 	// Log output file content
-	outputData, err := ioutil.ReadFile(outputPath)
+	outputData, err := ioutil.ReadFile(outPath)
 	if err != nil {
 		t.Fatalf("could not read output file for logging: %v", err)
 	}
 	t.Logf("Output CSV content:=%s", string(outputData))
 
 	// Verify the output CSV
-	outputFile, err := os.Open(outputPath)
+	outputFile, err := os.Open(outPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +80,7 @@ func TestAnalyzeCmd(t *testing.T) {
 +++ b/file.txt
 @@ -1 +1 @@
 -hello
-+hello world`, "feat: new feature", "This is a new feature.", "1", "http://example.com/1", "feat: new feature", "This is a new feature.", "gemini_analysis"}
++hello world`, "feat: new feature", "This is a new feature.", "1", "http://example.com/1", "feat: new feature", "This is a new feature.", "gemini"}
 	if !reflect.DeepEqual(records[1], expected) {
 		t.Errorf("Expected record %#v, got %#v", expected, records[1])
 	}

@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -37,72 +35,38 @@ var augmentCmd = &cobra.Command{
 	},
 }
 
+type augmentProcessor struct{}
+
+func (p *augmentProcessor) ProcessRecord(record []string, geminiService internal.GeminiService) ([]string, error) {
+	prTitle := record[3]
+	prBody := record[4]
+	unidiff := record[10]
+
+	tempDir, err := os.MkdirTemp("", "gemini")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tempDir)
+
+	title, body, err := geminiService.GenerateCommitMessage(tempDir, prTitle, prBody, unidiff)
+	if err != nil {
+		log.Printf("Error generating commit message: %v", err)
+		return append(record, "error", "error"), nil
+	}
+	return append(record, title, body), nil
+}
+
+func (p *augmentProcessor) GetOutputHeaders() []string {
+	return []string{"pr_number", "before_merge_commit_hash", "after_merge_commit_hash", "pr_title", "pr_body", "is_squash_merge", "merge_commit_title", "merge_commit_body", "source_link", "resolved_source_link", "source_link_unidiff", "gemini_proposed_title", "gemini_proposed_body"}
+}
+
+func (p *augmentProcessor) ShouldSkip(record []string) bool {
+	return len(record) > 11 && record[11] != "" && record[12] != ""
+}
+
 func runAugment(geminiService internal.GeminiService, inputPath, outputPath string) error {
-	file, err := os.Open(inputPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	// Read header
-	header, err := reader.Read()
-	if err != nil {
-		return err
-	}
-
-	csvWriter, err := internal.NewAugmentedCSVWriter(outputPath)
-	if err != nil {
-		return err
-	}
-	defer csvWriter.Close()
-
-	if err := csvWriter.WriteAugmented(header, "gemini_proposed_title", "gemini_proposed_body"); err != nil {
-		return err
-	}
-
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		if len(record) > 11 && record[11] != "" && record[12] != "" {
-			fmt.Printf("Skipping already augmented record for PR #%s\n", record[0])
-			if err := csvWriter.WriteAugmented(record, record[11], record[12]); err != nil {
-				log.Printf("Error writing to CSV: %v", err)
-			}
-			continue
-		}
-
-		prTitle := record[3]
-		prBody := record[4]
-		unidiff := record[10]
-
-		tempDir, err := os.MkdirTemp("", "gemini")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(tempDir)
-
-		title, body, err := geminiService.GenerateCommitMessage(tempDir, prTitle, prBody, unidiff)
-		if err != nil {
-			log.Printf("Error generating commit message: %v", err)
-			// Write the original record even if Gemini fails
-			if err := csvWriter.WriteAugmented(record, "error", "error"); err != nil {
-				log.Printf("Error writing to CSV: %v", err)
-			}
-			continue
-		}
-
-		if err := csvWriter.WriteAugmented(record, title, body); err != nil {
-			log.Printf("Error writing to CSV: %v", err)
-		}
-	}
-	return nil
+	processor := &augmentProcessor{}
+	return processCSV(processor, geminiService, inputPath, outputPath)
 }
 
 

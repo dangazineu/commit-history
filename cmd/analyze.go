@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/csv"
 	"fmt"
 	"log"
 	"os"
@@ -34,73 +33,39 @@ var analyzeCmd = &cobra.Command{
 	},
 }
 
+type analyzeProcessor struct{}
+
+func (p *analyzeProcessor) ProcessRecord(record []string, geminiService internal.GeminiService) ([]string, error) {
+	originalTitle := record[6]
+	originalBody := record[7]
+	geminiTitle := record[11]
+	geminiBody := record[12]
+
+	tempDir, err := os.MkdirTemp("", "gemini")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tempDir)
+
+	analysis, err := geminiService.AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody)
+	if err != nil {
+		log.Printf("Error analyzing commit messages: %v", err)
+		return append(record, "error"), nil
+	}
+	return append(record, analysis), nil
+}
+
+func (p *analyzeProcessor) GetOutputHeaders() []string {
+	return []string{"commit_hash", "author_name", "author_email", "commit_date", "subject", "body", "unidiff", "gemini_subject", "gemini_body", "pr_number", "pr_url", "pr_title", "pr_body", "gemini_analysis"}
+}
+
+func (p *analyzeProcessor) ShouldSkip(record []string) bool {
+	return len(record) > 13 && record[13] != ""
+}
+
 func runAnalyze(geminiService internal.GeminiService, inputPath, outputPath string) error {
-	file, err := os.Open(inputPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	// Read header
-	header, err := reader.Read()
-	if err != nil {
-		return err
-	}
-
-	csvWriter, err := internal.NewAnalyzedCSVWriter(outputPath)
-	if err != nil {
-		return err
-	}
-	defer csvWriter.Close()
-
-	if err := csvWriter.WriteAnalyzed(header, "gemini_analysis"); err != nil {
-		return err
-	}
-
-	for {
-		record, err := reader.Read()
-		if err != nil {
-			if err.Error() == "EOF" {
-				break
-			}
-			return err
-		}
-
-		if len(record) > 13 && record[13] != "" {
-			fmt.Printf("Skipping already analyzed record for PR #%s\n", record[0])
-			if err := csvWriter.WriteAnalyzed(record, record[13]); err != nil {
-				log.Printf("Error writing to CSV: %v", err)
-			}
-			continue
-		}
-
-		originalTitle := record[6]
-		originalBody := record[7]
-		geminiTitle := record[11]
-		geminiBody := record[12]
-
-		tempDir, err := os.MkdirTemp("", "gemini")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(tempDir)
-
-		analysis, err := geminiService.AnalyzeCommitMessages(tempDir, originalTitle, originalBody, geminiTitle, geminiBody)
-		if err != nil {
-			log.Printf("Error analyzing commit messages: %v", err)
-			if err := csvWriter.WriteAnalyzed(record, "error"); err != nil {
-				log.Printf("Error writing to CSV: %v", err)
-			}
-			continue
-		}
-
-		if err := csvWriter.WriteAnalyzed(record, analysis); err != nil {
-			log.Printf("Error writing to CSV: %v", err)
-		}
-		log.Printf("Wrote record: %v", record)
-	}
-	return nil
+	processor := &analyzeProcessor{}
+	return processCSV(processor, geminiService, inputPath, outputPath)
 }
 
 
