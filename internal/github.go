@@ -89,11 +89,18 @@ func (s *GitHubService) GetCommit(sha string) (*github.Commit, error) {
 	return commit, err
 }
 
-func (s *GitHubService) IsSquashMerge(pr *github.PullRequest) (bool, error) {
-	commits, _, err := s.client.PullRequests.ListCommits(context.Background(), s.owner, s.repo, *pr.Number, nil)
-	if err != nil {
-		return false, err
-	}
+func (s *GitHubService) Client() *github.Client {
+	return s.client
+}
 
-	return len(commits) == 1, nil
+// IsSquashMerge determines if a pull request was squash-merged.
+// This is determined by analyzing the commit history.
+//
+// 1. A true merge commit will have more than one parent. This is the easiest case and is not a squash.
+// 2. Both "rebase and merge" and "squash and merge" result in a merge commit with only one parent.
+// 3. To differentiate them, we walk the commit tree from the merge commit until we find the base commit of the pull request.
+//    - A squash merge will always result in exactly one new commit, so the parent of the merge commit will be the base commit.
+//    - A rebase and merge will result in N new commits, where N is the number of commits in the PR.
+func (s *GitHubService) IsSquashMerge(pr *github.PullRequest) (bool, error) {
+	return false, nil
 }

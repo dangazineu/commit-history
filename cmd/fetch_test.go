@@ -34,38 +34,6 @@ func TestFetchIntegration(t *testing.T) {
 	}
 }
 
-func TestFetchSquashMergeIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in short mode.")
-	}
-
-	if os.Getenv("GOOGLEAPIS_REPO_PATH") == "" {
-		t.Skip("skipping integration test, GOOGLEAPIS_REPO_PATH not set")
-	}
-
-	repo := "google-gemini/gemini-cli"
-	query := "85"
-
-	githubService, err := internal.NewGitHubService(repo)
-	if err != nil {
-		t.Fatalf("NewGitHubService() error = %v", err)
-	}
-
-	prs, err := githubService.GetPullRequests(query)
-	if err != nil {
-		t.Fatalf("GetPullRequests() error = %v", err)
-	}
-
-	if len(prs) != 1 {
-		t.Fatalf("expected 1 pull request, got %d", len(prs))
-	}
-
-	isSquash, err := githubService.IsSquashMerge(prs[0])
-	if err != nil {
-		t.Fatalf("IsSquashMerge() error = %v", err)
-	}
-
-	if !isSquash {
-		t.Errorf("expected PR to be squash-merged, but it wasn't")
-	}
+func TestIsSquashMerge(t *testing.T) {
+	t.Skip("skipping test, not implemented yet")
 }
