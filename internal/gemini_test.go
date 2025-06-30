@@ -70,7 +70,7 @@ func TestHelperProcess(t *testing.T) {
 		os.Exit(2)
 	}
 
-	cmd, args := args[0], args[1:]
+	cmd := args[0]
 	if cmd == "gemini" {
 		// Simulate the gemini executable's behavior
 		fmt.Fprintln(os.Stdout, "feat: new feature\n\nThis is the body.")

@@ -109,4 +109,3 @@ func runFetchForTest(repo, query, googleapisRepoPath string, githubService inter
 	fmt.Println("Done.")
 	return nil
 }
-

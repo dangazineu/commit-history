@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/csv"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -11,7 +10,7 @@ import (
 
 func TestAugmentCmd(t *testing.T) {
 	// Create a temporary directory for the test
-	tmpDir, err := ioutil.TempDir("", "test")
+	tmpDir, err := os.MkdirTemp("", "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,18 +25,22 @@ func TestAugmentCmd(t *testing.T) {
 
 	writer := csv.NewWriter(file)
 
-	writer.Write([]string{"pr_number", "before_merge_commit_hash", "after_merge_commit_hash", "pr_title", "pr_body", "is_squash_merge", "merge_commit_title", "merge_commit_body", "source_link", "resolved_source_link", "source_link_unidiff"})
-	writer.Write([]string{"1", "abc", "def", "feat: new feature", "This is a new feature.", "true", "feat: new feature", "This is a new feature.", "http://example.com/1", "http://example.com/1", `diff --git a/file.txt b/file.txt
+	if err := writer.Write([]string{"pr_number", "before_merge_commit_hash", "after_merge_commit_hash", "pr_title", "pr_body", "is_squash_merge", "merge_commit_title", "merge_commit_body", "source_link", "resolved_source_link", "source_link_unidiff"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Write([]string{"1", "abc", "def", "feat: new feature", "This is a new feature.", "true", "feat: new feature", "This is a new feature.", "http://example.com/1", "http://example.com/1", `diff --git a/file.txt b/file.txt
 --- a/file.txt
 +++ b/file.txt
 @@ -1 +1 @@
 -hello
-+hello world`})
++hello world`}); err != nil {
+		t.Fatal(err)
+	}
 	writer.Flush()
 	file.Close()
 
 	// Log input file content
-	inputData, err := ioutil.ReadFile(inputPath)
+	inputData, err := os.ReadFile(inputPath)
 	if err != nil {
 		t.Fatalf("could not read input file for logging: %v", err)
 	}
@@ -51,7 +54,7 @@ func TestAugmentCmd(t *testing.T) {
 	}
 
 	// Log output file content
-	outputData, err := ioutil.ReadFile(outPath)
+	outputData, err := os.ReadFile(outPath)
 	if err != nil {
 		t.Fatalf("could not read output file for logging: %v", err)
 	}
