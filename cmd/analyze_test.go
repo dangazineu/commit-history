@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/csv"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -11,7 +10,7 @@ import (
 
 func TestAnalyzeCmd(t *testing.T) {
 	// Create a temporary directory for the test
-	tmpDir, err := ioutil.TempDir("", "test")
+	tmpDir, err := os.MkdirTemp("", "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,18 +24,22 @@ func TestAnalyzeCmd(t *testing.T) {
 	}
 
 	writer := csv.NewWriter(file)
-	writer.Write([]string{"commit_hash", "author_name", "author_email", "commit_date", "subject", "body", "unidiff", "gemini_subject", "gemini_body", "pr_number", "pr_url", "pr_title", "pr_body"})
-	writer.Write([]string{"abc", "John Doe", "john.doe@example.com", "2025-06-29T20:00:00Z", "feat: new feature", "This is a new feature.", `diff --git a/file.txt b/file.txt
+	if err := writer.Write([]string{"commit_hash", "author_name", "author_email", "commit_date", "subject", "body", "unidiff", "gemini_subject", "gemini_body", "pr_number", "pr_url", "pr_title", "pr_body"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Write([]string{"abc", "John Doe", "john.doe@example.com", "2025-06-29T20:00:00Z", "feat: new feature", "This is a new feature.", `diff --git a/file.txt b/file.txt
 --- a/file.txt
 +++ b/file.txt
 @@ -1 +1 @@
 -hello
-+hello world`, "feat: new feature", "This is a new feature.", "1", "http://example.com/1", "feat: new feature", "This is a new feature."})
++hello world`, "feat: new feature", "This is a new feature.", "1", "http://example.com/1", "feat: new feature", "This is a new feature."}); err != nil {
+		t.Fatal(err)
+	}
 	writer.Flush()
 	file.Close()
 
 	// Log input file content
-	inputData, err := ioutil.ReadFile(inputPath)
+	inputData, err := os.ReadFile(inputPath)
 	if err != nil {
 		t.Fatalf("could not read input file for logging: %v", err)
 	}
@@ -50,7 +53,7 @@ func TestAnalyzeCmd(t *testing.T) {
 	}
 
 	// Log output file content
-	outputData, err := ioutil.ReadFile(outPath)
+	outputData, err := os.ReadFile(outPath)
 	if err != nil {
 		t.Fatalf("could not read output file for logging: %v", err)
 	}

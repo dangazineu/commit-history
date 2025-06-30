@@ -13,7 +13,7 @@ import (
 // setup sets up a test HTTP server along with a github.Client that is
 // configured to talk to that test server. Tests should register handlers on
 // mux which provide mock responses for the API method being tested.
-func setup() (client *github.Client, mux *http.ServeMux, serverURL string, teardown func()) {
+func setup() (client *github.Client, mux *http.ServeMux, teardown func()) {
 	// mux is the HTTP request multiplexer used with the test server.
 	mux = http.NewServeMux()
 
@@ -25,11 +25,11 @@ func setup() (client *github.Client, mux *http.ServeMux, serverURL string, teard
 	client = github.NewClient(nil)
 	client.BaseURL, _ = url.Parse(server.URL + "/")
 
-	return client, mux, server.URL, server.Close
+	return client, mux, server.Close
 }
 
 func TestGitHubService_GetPullRequests_byNumber(t *testing.T) {
-	client, mux, _, teardown := setup()
+	client, mux, teardown := setup()
 	defer teardown()
 
 	mux.HandleFunc("/repos/owner/repo/pulls/1", func(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +53,7 @@ func TestGitHubService_GetPullRequests_byNumber(t *testing.T) {
 }
 
 func TestGitHubService_GetCommit(t *testing.T) {
-	client, mux, _, teardown := setup()
+	client, mux, teardown := setup()
 	defer teardown()
 
 	mux.HandleFunc("/repos/owner/repo/git/commits/abc", func(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +77,7 @@ func TestGitHubService_GetCommit(t *testing.T) {
 }
 
 func TestGitHubService_IsSquashMerge(t *testing.T) {
-	client, mux, _, teardown := setup()
+	client, mux, teardown := setup()
 	defer teardown()
 
 	service := &GitHubService{
@@ -108,7 +108,7 @@ func TestGitHubService_IsSquashMerge(t *testing.T) {
 }
 
 func TestGitHubService_IsSquashMerge_Squash(t *testing.T) {
-	client, mux, _, teardown := setup()
+	client, mux, teardown := setup()
 	defer teardown()
 
 	service := &GitHubService{
@@ -139,7 +139,7 @@ func TestGitHubService_IsSquashMerge_Squash(t *testing.T) {
 }
 
 func TestGitHubService_IsSquashMerge_Rebase(t *testing.T) {
-	client, mux, _, teardown := setup()
+	client, mux, teardown := setup()
 	defer teardown()
 
 	service := &GitHubService{

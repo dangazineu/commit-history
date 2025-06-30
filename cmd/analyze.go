@@ -72,5 +72,7 @@ func runAnalyze(geminiService internal.GeminiService, inputPath, outputPath stri
 func init() {
 	rootCmd.AddCommand(analyzeCmd)
 	analyzeCmd.Flags().StringVar(&inputCsvAnalyze, "input-csv", "", "Path to the augmented CSV file")
-	analyzeCmd.MarkFlagRequired("input-csv")
+	if err := analyzeCmd.MarkFlagRequired("input-csv"); err != nil {
+		log.Fatalf("failed to mark flag as required: %v", err)
+	}
 }

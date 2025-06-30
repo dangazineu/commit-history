@@ -74,6 +74,10 @@ func init() {
 	rootCmd.AddCommand(augmentCmd)
 	augmentCmd.Flags().StringVar(&inputCsvAugment, "input-csv", "", "Path to the fetched CSV file")
 	augmentCmd.Flags().StringVar(&repoAugment, "repo", "", "GitHub repository URL (e.g., 'owner/repo')")
-	augmentCmd.MarkFlagRequired("input-csv")
-	augmentCmd.MarkFlagRequired("repo")
+	if err := augmentCmd.MarkFlagRequired("input-csv"); err != nil {
+		log.Fatalf("failed to mark flag as required: %v", err)
+	}
+	if err := augmentCmd.MarkFlagRequired("repo"); err != nil {
+		log.Fatalf("failed to mark flag as required: %v", err)
+	}
 }
