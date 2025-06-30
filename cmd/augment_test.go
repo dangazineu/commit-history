@@ -40,11 +40,13 @@ func TestAugmentCmd(t *testing.T) {
 	file.Close()
 
 	// Log input file content
-	inputData, err := os.ReadFile(inputPath)
-	if err != nil {
-		t.Fatalf("could not read input file for logging: %v", err)
+	if testing.Verbose() {
+		inputData, err := os.ReadFile(inputPath)
+		if err != nil {
+			t.Fatalf("could not read input file for logging: %v", err)
+		}
+		t.Logf("Input CSV content:\n%s", string(inputData))
 	}
-	t.Logf("Input CSV content:\n%s", string(inputData))
 
 	// Run the augment command
 	outPath := filepath.Join(tmpDir, "output.csv")
@@ -54,11 +56,13 @@ func TestAugmentCmd(t *testing.T) {
 	}
 
 	// Log output file content
-	outputData, err := os.ReadFile(outPath)
-	if err != nil {
-		t.Fatalf("could not read output file for logging: %v", err)
+	if testing.Verbose() {
+		outputData, err := os.ReadFile(outPath)
+		if err != nil {
+			t.Fatalf("could not read output file for logging: %v", err)
+		}
+		t.Logf("Output CSV content:%s", string(outputData))
 	}
-	t.Logf("Output CSV content:%s", string(outputData))
 
 	// Verify the output CSV
 	outputFile, err := os.Open(outPath)
@@ -73,7 +77,9 @@ func TestAugmentCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("Records read from output file: %#v", records)
+	if testing.Verbose() {
+		t.Logf("Records read from output file: %#v", records)
+	}
 
 	if len(records) != 2 {
 		t.Fatalf("Expected 2 records, got %d. Records: %#v", len(records), records)
