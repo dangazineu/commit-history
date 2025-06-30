@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/danielgazineu/commit-history/internal"
@@ -48,7 +49,19 @@ func runFetch(repo, query, googleapisRepoPath string) error {
 	fmt.Printf("Found %d merged pull requests.\n", len(prs))
 
 	outputFileName := fmt.Sprintf("%s-fetched.csv", strings.Split(repo, "/")[1])
-	csvWriter, err := internal.NewCSVWriter(outputFileName)
+	csvWriter, err := internal.NewCSVWriter(outputFileName, []string{
+		"pr_number",
+		"before_merge_commit_hash",
+		"after_merge_commit_hash",
+		"pr_title",
+		"pr_body",
+		"is_squash_merge",
+		"merge_commit_title",
+		"merge_commit_body",
+		"source_link",
+		"resolved_source_link",
+		"source_link_unidiff",
+	})
 	if err != nil {
 		return err
 	}
@@ -116,7 +129,23 @@ func processPullRequest(pr *github.PullRequest, githubService internal.GitHubSer
 		body = parts[1]
 	}
 
-	return csvWriter.Write(pr, isSquash, title, body, sourceLink, resolvedSourceLink, unidiff)
+	record := []string{
+		strconv.Itoa(*pr.Number),
+		*pr.Head.SHA,
+		"",
+		*pr.Title,
+		*pr.Body,
+		strconv.FormatBool(isSquash),
+		title,
+		body,
+		sourceLink,
+		resolvedSourceLink,
+		unidiff,
+	}
+	if pr.MergeCommitSHA != nil {
+		record[2] = *pr.MergeCommitSHA
+	}
+	return csvWriter.Write(record)
 }
 
 func init() {

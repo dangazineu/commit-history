@@ -80,7 +80,19 @@ func runFetchForTest(repo, query, googleapisRepoPath string, githubService inter
 	fmt.Printf("Found %d merged pull requests.\n", len(prs))
 
 	outputFileName := fmt.Sprintf("%s-fetched.csv", strings.Split(repo, "/")[1])
-	csvWriter, err := internal.NewCSVWriter(outputFileName)
+	csvWriter, err := internal.NewCSVWriter(outputFileName, []string{
+		"pr_number",
+		"before_merge_commit_hash",
+		"after_merge_commit_hash",
+		"pr_title",
+		"pr_body",
+		"is_squash_merge",
+		"merge_commit_title",
+		"merge_commit_body",
+		"source_link",
+		"resolved_source_link",
+		"source_link_unidiff",
+	})
 	if err != nil {
 		return err
 	}
