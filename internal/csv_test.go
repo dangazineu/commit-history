@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/csv"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-github/v62/github"
@@ -15,7 +16,19 @@ func TestWriteRecords(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(file.Name())
 
-	writer, err := NewCSVWriter(file.Name())
+	writer, err := NewCSVWriter(file.Name(), []string{
+		"pr_number",
+		"before_merge_commit_hash",
+		"after_merge_commit_hash",
+		"pr_title",
+		"pr_body",
+		"is_squash_merge",
+		"merge_commit_title",
+		"merge_commit_body",
+		"source_link",
+		"resolved_source_link",
+		"source_link_unidiff",
+	})
 	require.NoError(t, err)
 
 	pr := &github.PullRequest{
@@ -24,7 +37,20 @@ func TestWriteRecords(t *testing.T) {
 		Body:   github.String("test body"),
 		Head:   &github.PullRequestBranch{SHA: github.String("head_sha")},
 	}
-	err = writer.Write(pr, true, "merge title", "merge body", "source_link", "resolved_source_link", "unidiff")
+	isSquash := true
+	err = writer.Write([]string{
+		strconv.Itoa(*pr.Number),
+		*pr.Head.SHA,
+		"",
+		*pr.Title,
+		*pr.Body,
+		strconv.FormatBool(isSquash),
+		"merge title",
+		"merge body",
+		"source_link",
+		"resolved_source_link",
+		"unidiff",
+	})
 	require.NoError(t, err)
 	writer.Close()
 
