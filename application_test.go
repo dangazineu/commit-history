@@ -18,10 +18,16 @@ func rungo(t *testing.T, args ...string) {
 	}
 }
 
+func TestVulnerabilityCheck(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping vulnerability check in short mode.")
+	}
+	rungo(t, "run", "golang.org/x/vuln/cmd/govulncheck@latest", "./...")
+}
+
 func TestStaticAnalysis(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping static analysis in short mode.")
 	}
-	//rungo(t, "run", "github.com/golangci/golangci-lint/cmd/golangci-lint@latest", "run", "./...")
 	rungo(t, "run", "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest", "run")
 }

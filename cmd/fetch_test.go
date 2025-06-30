@@ -63,11 +63,11 @@ func TestFetch(t *testing.T) {
 	gitService.On("GetUnidiff", "12345").Return("unidiff", nil)
 	gitService.On("Clone", mock.Anything, mock.Anything).Return(nil)
 
-	err := runFetchForTest("owner/repo", "is:pr", "/tmp", githubService, gitService)
+	err := runFetchForTest("owner/repo", "is:pr", githubService, gitService)
 	assert.NoError(t, err)
 }
 
-func runFetchForTest(repo, query, googleapisRepoPath string, githubService internal.GitHubServiceInterface, gitService internal.GitServiceInterface) error {
+func runFetchForTest(repo, query string, githubService internal.GitHubServiceInterface, gitService internal.GitServiceInterface) error {
 	log.Println("Running fetch command")
 	fmt.Printf("Fetching pull requests for repository: %s\n", repo)
 	fmt.Printf("Query: %s\n", query)
